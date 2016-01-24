@@ -1,8 +1,8 @@
-module Noise (PermutationTable, permutationTable, noise3d) where
+module Noise (PermutationTable, permutationTable, noise3d, noise2d) where
 
 {-| This is a library to generate simplex noise in Elm.
 
-The code is a port of the [simplex noise JavaScript version](https://github.com/jwagner/simplex-noise.js) by Jonas Wagner.
+The code is a port of the [simplex noise JavaScript version](https:--github.com/jwagner/simplex-noise.js) by Jonas Wagner.
 
 ## Example usage
 
@@ -13,7 +13,7 @@ The code is a port of the [simplex noise JavaScript version](https://github.com/
 @docs permutationTable, PermutationTable
 
 # Genarate noise
-@docs noise3d
+@docs noise3d, noise2d
 
 -}
 import Array exposing (Array)
@@ -84,9 +84,16 @@ grad3 =
   1, 0, -1, -1, 0, -1, 0, 1, 1,
   0, -1, 1, 0, 1, -1, 0, -1, -1]
 
+getCornerOffset2d : Float -> Float -> (Int, Int)
+getCornerOffset2d x y =
+  if (x > y) then
+    (1, 0)
+  else
+    (0, 1)
 
-getCornerOffset : Float -> Float -> Float -> (Int, Int, Int, Int, Int, Int)
-getCornerOffset x y z =
+
+getCornerOffset3d : Float -> Float -> Float -> (Int, Int, Int, Int, Int, Int)
+getCornerOffset3d x y z =
   if (x >= y) then
     if (y >= z) then
       (1, 0, 0, 1, 1, 0)
@@ -102,9 +109,22 @@ getCornerOffset x y z =
     else
       (0, 1, 0, 1, 1, 0)
 
+getN2d : Float -> Float -> Int -> Int -> Array Int -> Array Int -> Float
+getN2d x y i j perm permMod12 =
+  let
+    t = 0.5 - x * x - y * y
+  in
+    if (t < 0) then
+      0
+    else
+      let
+        gi = (get permMod12 (i + get perm j)) * 3
+        t' = t * t
+      in
+        t' * t' * ((get grad3 gi ) * x + (get grad3 (gi + 1)) * y) -- (x,y) of grad3 used for 2D gradient
 
-getN : Float -> Float -> Float -> Int -> Int -> Int -> Array Int -> Array Int -> Float
-getN x y z i j k  perm permMod12 =
+getN3d : Float -> Float -> Float -> Int -> Int -> Int -> Array Int -> Array Int -> Float
+getN3d x y z i j k  perm permMod12 =
   let
     t = 0.6 - x * x - y * y - z * z
   in
@@ -117,6 +137,36 @@ getN x y z i j k  perm permMod12 =
       in
         t' * t' * ((get grad3 gi) * x + (get grad3 (gi + 1)) * y + (get grad3 (gi + 2)) * z)
 
+
+{-|
+Generates a noise value between `-1` and `1` based on the given x and y value and a seeded permutation table.
+Using the same permutation table will always return the same result for the same coordinate.
+-}
+noise2d : PermutationTable -> Float -> Float -> Float
+noise2d {perm, permMod12} xin yin =
+  let
+    s = (xin + yin) * f2  -- Hairy factor for 2D
+    i = floor (xin + s)
+    j = floor (yin + s)
+    t = toFloat (i + j) * g2
+    x0' = (toFloat i) - t -- Unskew the cell origin back to (x,y) space
+    y0' = (toFloat j) - t
+    x0 = xin - x0' -- The x,y distances from the cell origin
+    y0 = yin - y0'
+    (i1, j1) = getCornerOffset2d x0 y0
+    x1 = x0 - (toFloat i1) + g2 -- Offsets for middle corner in (x,y) unskewed coords
+    y1 = y0 - (toFloat j1) + g2
+    x2 = x0 - 1 + 2 * g2 -- Offsets for last corner in (x,y) unskewed coords
+    y2 = y0 - 1 + 2 * g2
+    -- Work out the hashed gradient indices of the three simplex corners
+    ii = and i 255
+    jj = and j 255
+    -- Calculate the contribution from the three corners
+    n0 = getN2d x0 y0 ii jj perm permMod12
+    n1 = getN2d x1 y1 (ii + i1)  (jj + j1) perm permMod12
+    n2 = getN2d x2 y2 (ii + 1)  (jj + 1) perm permMod12
+  in
+    70 * (n0 + n1 + n2)
 
 {-|
 Generates a noise value between `-1` and `1` based on the given x, y and z value and a seeded permutation table.
@@ -136,7 +186,7 @@ noise3d {perm, permMod12} xin yin zin =
     x0 = xin - x0'  --The x,y,z distances from the cell origin
     y0 = yin - y0'
     z0 = zin - z0'
-    (i1, j1, k1, i2, j2,  k2) = getCornerOffset x0 y0 z0
+    (i1, j1, k1, i2, j2,  k2) = getCornerOffset3d x0 y0 z0
     x1 = x0 - (toFloat i1) + g3 --Offsets for second corner in (x,y,z) coords
     y1 = y0 - (toFloat j1) + g3
     z1 = z0 - (toFloat k1) + g3
@@ -150,9 +200,9 @@ noise3d {perm, permMod12} xin yin zin =
     ii = and i 255
     jj = and j 255
     kk = and k 255
-    n0 = getN x0 y0 z0 ii jj kk perm permMod12
-    n1 = getN x1 y1 z1 (ii + i1) (jj + j1) (kk + k1) perm permMod12
-    n2 = getN x2 y2 z2 (ii + i2) (jj + j2) (kk + k2)  perm permMod12
-    n3 = getN x3 y3 z3 (ii + 1) (jj + 1) (kk + 1)  perm permMod12
+    n0 = getN3d x0 y0 z0 ii jj kk perm permMod12
+    n1 = getN3d x1 y1 z1 (ii + i1) (jj + j1) (kk + k1) perm permMod12
+    n2 = getN3d x2 y2 z2 (ii + i2) (jj + j2) (kk + k2)  perm permMod12
+    n3 = getN3d x3 y3 z3 (ii + 1) (jj + 1) (kk + 1)  perm permMod12
   in
    32 * (n0 + n1 + n2 + n3)
