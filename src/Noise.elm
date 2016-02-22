@@ -177,7 +177,7 @@ permutationTable seed =
     |> Random.Array.shuffle seed
     |> \ (list, seed) ->(Array.append list  (reverseArray list), seed)
   in
-    ({perm= perm, permMod12 = generatePermMod12 perm}, seed)
+    ({perm= perm, permMod12 = generatePermMod12 perm}, seed')
 
 
 {-|
