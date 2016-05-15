@@ -1,5 +1,5 @@
 {
-    "version": "1.2.1",
+    "version": "1.2.2",
     "summary": "This is a library to generate simplex noise in Elm.",
     "repository": "https://github.com/eskimoblood/elm-simplex-noise.git",
     "license": "MIT",
@@ -10,8 +10,8 @@
         "Noise"
     ],
     "dependencies": {
-        "elm-lang/core": "4.0.0 <= v < 5.0.0",
-        "elm-community/elm-random-extra": "1.0.0 <= v < 2.0.0"
+        "elm-community/elm-random-extra": "1.0.0 <= v < 2.0.0",
+        "elm-lang/core": "4.0.0 <= v < 5.0.0"
     },
     "elm-version": "0.17.0 <= v < 0.18.0"
 }
