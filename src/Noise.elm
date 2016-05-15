@@ -1,4 +1,4 @@
-module Noise (PermutationTable, permutationTable, noise4d, noise3d, noise2d) where
+module Noise exposing (PermutationTable, permutationTable, noise4d, noise3d, noise2d)
 
 {-| This is a library to generate simplex noise in Elm.
 
@@ -165,6 +165,12 @@ Permutation table that is needed to generate the noise value.
 type alias PermutationTable = {perm: Array Int, permMod12: Array Int}
 
 
+permGenerattor : Random.Generator (Array Int)
+permGenerattor =
+  [0..255]
+  |> Array.fromList
+  |> Random.Array.shuffle
+
 {-|
 Genrate the permutation tables that are needed to calculate the noise value.
 The function takes a seed and returns the table and  a new seed.
@@ -172,9 +178,7 @@ The function takes a seed and returns the table and  a new seed.
 permutationTable : Random.Seed -> (PermutationTable, Random.Seed)
 permutationTable seed =
   let (perm, seed') =
-    [0..255]
-    |> Array.fromList
-    |> Random.Array.shuffle seed
+    Random.step permGenerattor seed
     |> \ (list, seed) ->(Array.append list  (reverseArray list), seed)
   in
     ({perm= perm, permMod12 = generatePermMod12 perm}, seed')
