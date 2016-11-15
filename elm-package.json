@@ -1,5 +1,5 @@
 {
-    "version": "1.2.2",
+    "version": "1.2.3",
     "summary": "This is a library to generate simplex noise in Elm.",
     "repository": "https://github.com/eskimoblood/elm-simplex-noise.git",
     "license": "MIT",
